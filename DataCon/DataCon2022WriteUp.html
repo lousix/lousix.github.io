@@ -18,7 +18,7 @@
   
     <meta name="description" content="DataCon2022软件安全赛道WriteUpPowershell反混淆-Level01一、题目介绍1.1 题目背景PowerShell是攻击者常用的脚本，通常带有大量的混淆，导致检测、分析十分困难。选手通过分析主办方提供的混淆PowerShell文件，尝试反混淆得到PowerShell样本中预先植入的flag。 1.2 题目要求PowerShell样本数据集包含利用各种混淆手段混淆后的Powe">
 <meta property="og:type" content="website">
-<meta property="og:title" content="page.title">
+<meta property="og:title" content="DataCon2022软件安全赛道WriteUp">
 <meta property="og:url" content="http://blog.lousix.top/DataCon/DataCon2022WriteUp.html">
 <meta property="og:site_name" content="Lousix Blog">
 <meta property="og:description" content="DataCon2022软件安全赛道WriteUpPowershell反混淆-Level01一、题目介绍1.1 题目背景PowerShell是攻击者常用的脚本，通常带有大量的混淆，导致检测、分析十分困难。选手通过分析主办方提供的混淆PowerShell文件，尝试反混淆得到PowerShell样本中预先植入的flag。 1.2 题目要求PowerShell样本数据集包含利用各种混淆手段混淆后的Powe">
@@ -40,15 +40,15 @@
 <meta property="og:image" content="http://blog.lousix.top/DataCon2022WriteUp/Untitled%2014.png">
 <meta property="og:image" content="http://blog.lousix.top/DataCon2022WriteUp/Untitled%2015.png">
 <meta property="og:image" content="http://blog.lousix.top/DataCon2022WriteUp/Untitled%2016.png">
-<meta property="article:published_time" content="2023-01-28T06:48:57.414Z">
-<meta property="article:modified_time" content="2023-01-28T06:48:48.295Z">
+<meta property="article:published_time" content="2023-01-28T07:18:53.131Z">
+<meta property="article:modified_time" content="2023-01-28T07:18:53.131Z">
 <meta property="article:author" content="Lousix">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="http://blog.lousix.top/DataCon2022WriteUp/Untitled.png">
   
   
   
-  <title>page.title - Lousix Blog</title>
+  <title>DataCon2022软件安全赛道WriteUp - Lousix Blog</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -208,7 +208,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="page.title"></span>
+            <span id="subtitle" data-typed-text="DataCon2022软件安全赛道WriteUp"></span>
           
         </div>
 
@@ -251,7 +251,7 @@
 <p>在对题目逐渐深入后，我们发现大部分的样本都存在IEX指令。同时经过测试，我们发现很多样本再去除IEX指令后，直接载入PowerShell中进行模拟执行一次或若干次，即可得到隐藏的flag。而IEX也并非为可读明文的形式，往往也存在被混淆的现象，于是我们从样本和网络中收集了一些IEX的变形，形成IEX识别名单。</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-string">&#x27;IEX&#x27;</span>, <span class="hljs-string">&#x27;Invoke-Expression&#x27;</span>,<br><span class="hljs-string">&quot;$ShellId[1]+$ShellId[13]+&#x27;x&#x27;&quot;</span>,<br><span class="hljs-string">&quot;$PSHome[4]+$PSHome[30]+&#x27;x&#x27;&quot;</span>, <br><span class="hljs-string">&quot;$PSHome[21]+$PSHome[30]+&#x27;x&#x27;&quot;</span>, <br><span class="hljs-string">&quot;$PSHome[4]+$PSHome[34]+&#x27;x&#x27;&quot;</span>, <br><span class="hljs-string">&quot;$PSHome[21]+$PSHome[34]+&#x27;x&#x27;&quot;</span>, <br><span class="hljs-string">&quot;$env:ComSpec[4,15,25]-Join&#x27;&#x27;&quot;</span>, <br><span class="hljs-string">&quot;$env:ComSpec[4,24,25]-Join&#x27;&#x27;&quot;</span>,<br><span class="hljs-string">&quot;$env:ComSpec[4,26,25]-Join&#x27;&#x27;&quot;</span>, <br><span class="hljs-string">&quot;(Get-Variable&#x27;*mdr*&#x27;).Name[3,11,2]-Join&#x27;&#x27;&quot;</span>, <br><span class="hljs-string">&quot;(GV&#x27;*mdr*&#x27;).Name[3,11,2]-Join&#x27;&#x27;&quot;</span>, <br><span class="hljs-string">&quot;(Variable&#x27;*mdr*&#x27;).Name[3,11,2]-Join&#x27;&#x27;&quot;</span>,<br><span class="hljs-string">&quot;$VerbosePreference.ToString()[1,3]+&#x27;x&#x27;-Join&#x27;&#x27;&quot;</span>, <br><span class="hljs-string">&quot;([String]`$VerbosePreference)[1,3]+&#x27;x&#x27;-Join&#x27;&#x27;&quot;</span>,<br><span class="hljs-string">&quot;(Variable &#x27;*mdr*&#x27;).Name[3,11,2]-Join&#x27;&#x27;&quot;</span><br></code></pre></td></tr></table></figure>
 
-<p>当然在识别过程中，为应对部分字符串混淆的情况会将<code>+</code>、<code>&quot;</code>、<code>&#39;</code>、&#96;&#96;&#96;等字符去除，以更多地匹配IEX指令。</p>
+<p>当然在识别过程中，为应对部分字符串混淆的情况会将<code>+</code>、<code>&quot;</code>、<code>&#39;</code>、&#96;`&#96;等字符去除，以更多地匹配IEX指令。</p>
 <p>根据以上发现，我们以可识别IEX的数量和位置信息为分类依据，将800个数据进行如下分类：</p>
 <ul>
 <li>无可识别IEX的样本<ul>
